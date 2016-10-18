@@ -79,3 +79,6 @@ td {
 	height: 20px;
 	background-color: red;
 }
+.disabled{
+	pointer-events: none;
+}

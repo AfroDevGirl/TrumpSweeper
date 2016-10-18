@@ -11,6 +11,10 @@ var Game = function(boardSize, totalMines){
 	this.totalMines = totalMines;
 	this.mines;
 	this.board = []; 
+	this.clickedCells = 0;
+	this.isGameOver = false;
+	this.maxClearCells = (this.boardSize[0] * this.boardSize[1]) - this.totalMines;
+
 	this.generateMines = function(){
 		var mineLocations = [];
 		var row = 0;
@@ -45,61 +49,62 @@ var Game = function(boardSize, totalMines){
 
 		this.mines = mineLocations;
 	}
+
+	this.createAreaBox = function(currentLocation){
+		var mainRow = currentLocation[0];
+		var mainCell = currentLocation[1];
+		var topRow = mainRow - 1;
+		var bottomRow = mainRow + 1;
+		var maxWidth = this.boardSize[1] - 1;
+		var maxHeight = this.boardSize[0] - 1;
+
+		if(topRow < 0){
+			if(mainCell == 0){
+				var box = [[mainRow, mainCell + 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]];	
+			} else if(mainCell == maxWidth){
+				var box = [[mainRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell - 1]];
+			} else {
+				var box = [[mainRow, mainCell-1],[mainRow, mainCell + 1],[bottomRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]];
+			}
+		}else if(bottomRow > maxHeight){
+			if(mainCell == 0){
+				var box = [[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell + 1]];
+			}else if(mainCell == maxWidth){
+				var box = [[topRow, mainCell],[topRow, mainCell - 1],[mainRow, mainCell - 1]];
+			}else {
+				var box = [[topRow, mainCell - 1],[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell-1],[mainRow, mainCell + 1]]
+			}
+		}else{
+			if (mainCell == 0){
+				var box = [[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell + 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]]
+			}else if(mainCell == maxWidth){
+				var box = [[topRow, mainCell],[topRow, mainCell - 1],[mainRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell - 1]]
+			}else{
+				var box = [[topRow, mainCell - 1],[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell-1],[mainRow, mainCell + 1],[bottomRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]]
+			}
+		}
+		return box;
+	}
+
 	this.findMines = function(currentLocation){
 		var totalMines = 0;
-		var cRow = Number.parseInt(currentLocation[0]);
-		var cCell = Number.parseInt(currentLocation[1]);
-		var that = this;
+		var row = currentLocation[0];
+		var cell = currentLocation[1];
 
-		var createAreaBox = function(){
-			var mainRow = cRow;
-			var mainCell = cCell;
-			var topRow = mainRow - 1;
-			var bottomRow = mainRow + 1;
-			var maxWidth = that.boardSize[1] - 1;
-			var maxHeight = that.boardSize[0] - 1;
-			if(topRow < 0){
-				if(mainCell == 0){
-					var box = [[mainRow, mainCell + 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]];	
-				} else if(mainCell == maxWidth){
-					var box = [[mainRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell - 1]];
-				} else {
-					var box = [[mainRow, mainCell-1],[mainRow, mainCell + 1],[bottomRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]];
-				}
-			}else if(bottomRow > maxHeight){
-				if(mainCell == 0){
-					var box = [[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell + 1]];
-				}else if(mainCell == maxWidth){
-					var box = [[topRow, mainCell],[topRow, mainCell - 1],[mainRow, mainCell - 1]];
-				}else {
-					var box = [[topRow, mainCell - 1],[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell-1],[mainRow, mainCell + 1]]
-				}
-			}else{
-				if (mainCell == 0){
-					var box = [[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell + 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]]
-				}else if(mainCell == maxWidth){
-					var box = [[topRow, mainCell],[topRow, mainCell - 1],[mainRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell - 1]]
-				}else{
-					var box = [[topRow, mainCell - 1],[topRow, mainCell],[topRow, mainCell + 1],[mainRow, mainCell-1],[mainRow, mainCell + 1],[bottomRow, mainCell - 1],[bottomRow, mainCell],[bottomRow, mainCell + 1]]
-				}
-			}
-			return box;
-		}
-		
-		if(this.board[currentLocation[0]][cCell].isMine == false){
-			var areaBox = createAreaBox([cRow,cCell]);
+		if(this.board[row][cell].isMine == false){
+			var areaBox = this.createAreaBox([row,cell]);
 			for(var y = 0; y < areaBox.length;y++){
-				var row = areaBox[y][0].toString();
-				var cell = areaBox[y][1];
+				var abRow = areaBox[y][0];
+				var abCell = areaBox[y][1];
 				
-				if(this.board[row][cell].isMine == true){
+				if(this.board[abRow][abCell].isMine == true){
 					totalMines++;
 				}
-				
 			}
 		}
-		this.board[currentLocation[0]][cCell].numOfMines = totalMines;		
+		this.board[row][cell].numOfMines = totalMines;		
 	}
+
 	this.generateBoard = function(){
 		this.generateMines();
 		for(var i = 0; i < this.boardSize[0]; i++){
@@ -118,11 +123,7 @@ var Game = function(boardSize, totalMines){
 			this.board.push(currentRow);
 		}
 	}
-	this.findNextMine = function(currentLoc){
-		var row = currentLoc[0];
-		var cell = currentLoc[1];
 
-	}
 	this.printCell = function(location){
 		var row = Number.parseInt($(location).parent().get(0).id);
 		var cell = Number.parseInt(location.id);
@@ -130,32 +131,40 @@ var Game = function(boardSize, totalMines){
 		var boardLoc = this.board[row][cell];
 
 		boardLoc.clicked = true;
+		this.clickedCells++;
 		this.findMines([row,cell]);
 
 		if(boardLoc.isMine == true){
 			for(var i = 0; i < this.mines.length; i++){
 				mine = this.mines[i];
-				console.log(mine);
 				$("tr#" + mine.row + " > td[id='"+ mine.cell + "']").addClass("mine");
 			}
-			$("td").each(function(index,element){
-				$(element).addClass("disabled");
-			});
-			// $htmlloc.addClass("mine");
-			
+			this.isGameOver = true;
+					
 		} else if(boardLoc.numOfMines > 0){
 			var numOfMinesText = boardLoc.numOfMines.toString();
 			$htmlloc.addClass("mine-"+numOfMinesText);
 			$htmlloc.text(numOfMinesText);
+			if(this.clickedCells == this.maxClearCells){
+				console.log("hello from the last clicked cell with a mine near it");
+				this.isGameOver == true;
+			}
 		} else {
 			$htmlloc.addClass("no-mine");
+			if(this.clickedCells == this.maxClearCells){
+				console.log("hello from the last clicked cell without a mine near it");
+				this.isGameOver == true;
+			}
 		}
+
 	}
+
 	this.clearBoard = function(){
 		$("tr").each(function(index, element){
 			$(element).remove();
 		});
 	}
+
 	this.printBoard = function(){
 		this.clearBoard();
 		var rows = this.boardSize[0];
@@ -169,12 +178,6 @@ var Game = function(boardSize, totalMines){
 			$("#gameboard").append(htmlString + "</tr>");
 		}
 	}
-	// this.addFlag = function(location){
-	// 	var row = $(location).parent().get(0).id;
-	// 	var cell = location.id;
-	// 	var $htmlloc = $(location);
-	// 	$htmlloc.addClass("flag");
-	// }
 };
 
 $(document).ready(function(){
@@ -198,6 +201,11 @@ $(document).ready(function(){
 		$("td").on("click", function(e){
 			// e.preventDefault();
 			newGame.printCell(this);
+			if (newGame.isGameOver == true) {
+				$("td").each(function(index,element){
+					$(element).addClass("disabled");
+				});	
+			}
 		});
 	});
 });
