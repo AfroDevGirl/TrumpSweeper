@@ -147,13 +147,13 @@ var Game = function(boardSize, totalMines){
 			$htmlloc.text(numOfMinesText);
 			if(this.clickedCells == this.maxClearCells){
 				console.log("hello from the last clicked cell with a mine near it");
-				this.isGameOver == true;
+				this.isGameOver = true;
 			}
 		} else {
 			$htmlloc.addClass("no-mine");
 			if(this.clickedCells == this.maxClearCells){
 				console.log("hello from the last clicked cell without a mine near it");
-				this.isGameOver == true;
+				this.isGameOver = true;
 			}
 		}
 
